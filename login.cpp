@@ -2,113 +2,102 @@
 #include <fstream>
 #include <string>
 #include <array>
-#include <algorithm>
-#include <unordered_map>
 #include "authlib.h"
 #include "openssl/sha.h"
+#include <iomanip>
+#include <vector>
+#include <sstream>
 
 #define INPUT_FILE "passwords.txt"
-typedef std::array<unsigned char, SHA256_DIGEST_LENGTH> hash_t;
-typedef std::unordered_map<std::string, hash_t> map_t;
 
-bool parse_password_file(const std::string& path, map_t& out);
-bool sha256(const std::string& input, hash_t& output);
-bool parse_hash(std::string hash, hash_t& parsed);
-unsigned char hex2byte(char hex);
+//So we don't have to constantly do "std::", remove if we want -1 less ';'
+using namespace std;
 
-int main() {
-  map_t passwords;
-  auto parsing_succeeded = parse_password_file(INPUT_FILE, passwords);
-  if(!parsing_succeeded) {
-    std::cerr<<"Password file was in an invalid format"<<std::endl;
-    return 1;
-  }
+string holdUserPass[2];
 
-  std::cout<<"Username:"<<std::endl;
-  std::string username;
-  std::cin>>username;
+// Will read the file with the passwords and do...
+void parsePasswordFile(const string& path, string username){
 
-  std::cout<<"Password:"<<std::endl;
-  std::string password;
-  std::cin>>password;
+    string line;
+    ifstream file(path);
 
-  hash_t actual_hash;
-  auto hash_success = sha256(password, actual_hash);
-  if(!hash_success) {
-    std::cerr<<"Internal error computing the hash"<<std::endl;
-    return 1;
-  }
+    // while there is a line, it will try to split it
+    while(getline(file, line)){
 
-  try {
-    auto expected_hash = passwords.at(username);
+        auto delimPo = line.find(':');
+        if(delimPo == string::npos) break;
 
-    if(expected_hash == actual_hash) {
-      authenticated(username);
-    } else {
-      rejected(username);
+        string name = line.substr(0, delimPo);
+        string hash = line.substr(delimPo + 1);
+
+        //Checks if the two are the same
+        if(!name.compare(username)){
+             holdUserPass[0] = name;
+             holdUserPass[1] = hash;
+        }
     }
-  } catch (const std::out_of_range&) {
-    rejected(username);
-  }
-
-  return 0;
+    file.close();
 }
 
-bool parse_password_file(const std::string& path, map_t& out) {
-  std::ifstream file(path);
-  std::string line;
-  while(std::getline(file, line)) {
-    auto colon_pos = line.find(':');
-    if(colon_pos == std::string::npos) return false;
-    std::string name = line.substr(0, colon_pos);	
-    std::string hash = line.substr(colon_pos + 1);
-    hash_t parsed;
-    auto parsing_succeeded = parse_hash(hash, parsed);
-    if(!parsing_succeeded) return false;
-    out[name] = parsed;
-  }
-  return true;
+// Encodes the password. 
+// This is on the stackoverflow page provided - post made by Yola
+string sha256(string password) {
+
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+
+    SHA256_CTX sha256;
+    int checkInit = SHA256_Init(&sha256);
+    int checkUpdate = SHA256_Update(&sha256, password.c_str(), password.size());
+    int checkFinal = SHA256_Final(hash, &sha256);
+
+    stringstream ss;
+
+    // Checks if it hashed properly
+    if(checkInit == 1 && checkUpdate == 1 && checkFinal == 1){
+
+        //Updates ss in order to turn it into a string later
+        for(int i = 0; i < SHA256_DIGEST_LENGTH; i++){
+            ss << hex << setw(2) << setfill('0') << (int)hash[i];
+        }
+
+        string hashed = ss.str();
+        return hashed;
+    }
+    else{
+        return "ERROR"; }
 }
 
-bool sha256(const std::string& input, hash_t& output) {
-  unsigned char hash[SHA256_DIGEST_LENGTH];
-  SHA256_CTX context;
-  if (! SHA256_Init(&context) ) return false;
-  else if (! SHA256_Update(&context, input.c_str(), input.size()) ) return false;
-  else if (! SHA256_Final(hash, &context) ) return false;
+// Will compared the passwords entered and then give the correct message
+void comparePassword(string password, string username){
 
-  std::copy(std::begin(hash), std::end(hash), std::begin(output));
-  return true;
+    parsePasswordFile(INPUT_FILE, username);
+    string temp = sha256(password);
+    
+    //Checks if the hashed password matches and gives corresponding message
+    if(!holdUserPass[1].compare(temp)){
+        authenticated(username);
+    }
+    else{
+        rejected(username);
+    }
 }
 
-bool parse_hash(std::string hash, hash_t& out) {
-  std::size_t out_index = 0;
-  std::size_t hash_index = 0;
-  while(out_index < out.size()) {
-    auto first_nibble = hex2byte(hash[hash_index]);
-    if(first_nibble == 255) return false;
-    out[out_index] = first_nibble << 4;
+//Will ask the user for login in order to determine if they're on the "system"
+void askForLogin(){
 
-    hash_index++;
+    // Asaks for the username and password to later be authenticated
+    string username;
+    cout << "Username: "; 
+    cin >> username;
 
-    auto second_nibble = hex2byte(hash[hash_index]);
-    if(second_nibble == 255) return false;
-    out[out_index] |= second_nibble;
+    string password;
+    cout << "Password: ";
+    cin >> password;
 
-    hash_index++;
-    out_index++;
-  }
-  return true;
+    comparePassword(password, username);
 }
 
-// Modified from https://stackoverflow.com/a/42201530
-unsigned char hex2byte(char hex) {
-  unsigned char v = 255;
-  if ((hex >= '0') && (hex <= '9'))
-    v = (hex - '0');
-  else if ((hex >= 'A') && (hex <= 'F'))
-    v = (hex - 'A' + 10);
-  else if ((hex >= 'a') && (hex <= 'f'))
-    v = (hex - 'a' + 10);
-  return v;
+//Just the main boi doing main boi things
+int main(){
+    askForLogin();
 }
