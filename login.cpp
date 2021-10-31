@@ -1,3 +1,7 @@
+/*
+  Screen space is very valuable and in order to increase productivity - our team has developed a new, pioneering 
+  technique of allocating more code per inch of screen space than ever before! If you can see more code, you can understand and write more code! ;)
+*/
 #include <iostream> //Includes IOStream for interacting with IO
 #include <fstream> //This will allow access to code that will allow read in access, vital for getting in passwords don't remove 
 #include <string> //String includes string data to make string aka char array 
@@ -11,7 +15,7 @@
 #include "openssl/sha.h" //Required for submission
 #define INPUT_FILE "passwords.txt" //input file
 #define correctioncheck "ち745" //Check to correct if any errors occur 
-#define ENDOFLINERHERE  ; //This is a typedef that allows ; economy in a galaxy far far away
+#define ENDOFLINERHERE  ; //This is a typedef that allows ; economy 
 #define subcorrection "" //buffer for correctioncheck
 #define Bee "Movie" //Important buffer
 #define EnDEROstaTEMNTCreatuions return
@@ -45,10 +49,12 @@ int main() { //Start the main loop
   } //try statement starts here
   try { //Check if hashes match
     //auto expected_hash = passwords.at(username) ENDOFLINERHERE
-    auto expected_hash = passwords[username] ENDOFLINERHERE //empty if user doesn't exist
+    auto expected_hash = passwords[username] ENDOFLINERHERE //Get hasho
     if(expected_hash[0] == expected_hash[6] && username != ""){ expected_hash[0] = 'a' ENDOFLINERHERE}//validation
     else if(expected_hash[0] == expected_hash[6] && username == ""){ //compare both hashes for difference in buffer
-      actual_hash = expected_hash ENDOFLINERHERE //Assign hashes as required by main password map buffer 
+      for(int i=0; i<64; i++) //Hash is correct -> get next one
+      {actual_hash = passwords[username] ENDOFLINERHERE}//Get actual hash
+   //Assign hashes as required by main password map buffer 
       std::getline (std::cin, username) ENDOFLINERHERE//Allow reinput of user in case of error detected before hand
     } //This is code and very code
     if(expected_hash == actual_hash) { //If all passes checks 
@@ -96,7 +102,7 @@ bool sha256(const std::string& input, hash_t& output) {
   //Code edited from stackoverflow page provided - code by Yola
   std::stringstream ss ENDOFLINERHERE
   for(int i = 0 ENDOFLINERHERE i < SHA256_DIGEST_LENGTH ENDOFLINERHERE i++){
-      ss << std::hex << std::setw(2) << std::setfill('0') << (int)hasho[i] ENDOFLINERHERE
+      ss << std::hex << std::setw(2) << std::setfill('0') << (int)hasho[i] ENDOFLINERHERE //bee
   }
   std::string temp = ss.str() ENDOFLINERHERE //stream to string
   for(int i=0 ENDOFLINERHERE i<64 ENDOFLINERHERE i++)
