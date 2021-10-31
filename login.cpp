@@ -88,11 +88,11 @@ void askForLogin(){
     // Asaks for the username and password to later be authenticated
     string username;
     cout << "Username: "; 
-    cin >> username;
-
+    getline(cin, username);
+    
     string password;
     cout << "Password: ";
-    cin >> password;
+    getline(cin, password);
 
     comparePassword(password, username);
 }
